@@ -18,9 +18,9 @@ app.permanent_session_lifetime = timedelta(minutes=10)
 # To connect MySQL database
 conn = pymysql.connect(
         host='localhost',
-        user='user', 
-        password = "test",
-        db='449_db',
+        user='user', # set user to the username of your account - prob "root"
+        password = "test", # Change password to password you set for your database
+        db='449_midterm',
 		cursorclass=pymysql.cursors.DictCursor
         )
 cur = conn.cursor()
@@ -35,23 +35,23 @@ def login():
 		session.permanent = True
 		username = request.form['username']
 		password = request.form['password']
-		cur.execute('SELECT * FROM accounts WHERE username = % s AND password = % s', (username, password, ))
+		cur.execute('SELECT * FROM Accounts WHERE Username = % s AND Password = % s', (username, password, ))
 		conn.commit()
 		account = cur.fetchone()
 		if account:
 
 			session['loggedin'] = True
 			session['id'] = account['id']
-			session['username'] = account['username']
+			session['Username'] = account['Username']
 			msg = 'Logged in successfully !'
 			# direct them to the upload a file page if they successfully log in
-			return render_template('index.html', msg = msg)
+			return render_template('upload.html', msg = msg)
 		else:
 			msg = 'Incorrect username / password !'
 	else:
-		if "loggedin" in session:
-			# redirect them to the upload a file page if they are already logged in
-			return redirect(url_for("upload_file"))
+		# if "loggedin" in session:
+		# 	# redirect them to the upload a file page if they are already logged in
+		# 	return redirect(url_for("upload_file"))
 		return render_template('login.html', msg = msg)
 	
 
@@ -65,23 +65,28 @@ def logout():
 @app.route('/register', methods =['GET', 'POST'])
 def register():
 	msg = ''
-	if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form and 'address' in request.form and 'city' in request.form and 'country' in request.form and 'postalcode' in request.form and 'organisation' in request.form:
+	if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form and 'firstName' in request.form and 'lastName' in request.form:
 		print('reached')
 		username = request.form['username']
 		password = request.form['password']
+		retypePassword = request.form['retypePassword']
 		email = request.form['email']
+		firstName = request.form['firstName']
+		lastName = request.form['lastName']
 		cur.execute('SELECT * FROM accounts WHERE username = % s', (username, ))
 		account = cur.fetchone()
 		print(account)
 		conn.commit()
 		if account:
-			msg = 'Account already exists !'
+			msg = 'Account already exists!'
 		elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-			msg = 'Invalid email address !'
+			msg = 'Invalid email address!'
 		elif not re.match(r'[A-Za-z0-9]+', username):
-			msg = 'name must contain only characters and numbers !'
+			msg = 'name must contain only characters and numbers!'
+		elif not re.match(retypePassword, password):
+			msg = 'passwords do not match!'
 		else:
-			cur.execute('INSERT INTO accounts VALUES (NULL, % s, % s, % s)', (username, password, email,))
+			cur.execute('INSERT INTO accounts VALUES (NULL, % s, % s, % s, % s, % s)', (username, password, email, firstName, lastName))
 			conn.commit()
 
 			msg = 'You have successfully registered!'
