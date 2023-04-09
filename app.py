@@ -92,20 +92,17 @@ def register():
 		retypePassword = request.form['retypePassword']
 		firstName = request.form['firstName']
 		lastName = request.form['lastName']
-		cur.execute('SELECT * FROM Accounts WHERE username = % s', (username, ))
+		cur.execute('SELECT * FROM Accounts WHERE username = % s;', (username, ))
 		account = cur.fetchone()
-		print(account)
 		conn.commit()
 		if account:
 			msg = 'Account already exists!'
-		elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-			msg = 'Invalid email address!'
 		elif not re.match(r'[A-Za-z0-9]+', username):
 			msg = 'name must contain only characters and numbers!'
 		elif not re.match(retypePassword, password):
 			msg = 'passwords do not match!'
 		else:
-			cur.execute('INSERT INTO Accounts (FirstName, LastName, Username, Password) VALUES ( % s, % s, % s, % s)', (firstName, lastName, username, password))
+			cur.execute('INSERT INTO Accounts (FirstName, LastName, Username, Password) VALUES ( % s, % s, % s, % s);', (firstName, lastName, username, password))
 			conn.commit()
 
 			msg = 'You have successfully registered!'
