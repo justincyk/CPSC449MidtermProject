@@ -66,40 +66,56 @@ def login_required(func):
 	return decorated_func
 
 # login endpoint
-@app.route('/login', methods = ['POST'])
+@app.route('/')
+@app.route('/login', methods =['GET', 'POST'])
 def login():
-	data = request.form
-	username = data.get('username')
-	password = data.get('password')
+	msg = ''
+	if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
+		session.permanent = True
+		data = request.form
+		username = data.get('username')
+		password = data.get('password')
 
 	# if required information is not present
-	if not data or not username or not password:
-		abort(401, description="username and password is required to login")
+	# if not data or not username or not password:
+	# 	abort(401, description="username and password is required to login")
 
 	# use information to retreive account
-	cur.execute('select * from Accounts where username = % s and password = % s', (username, password))
-	conn.commit()
-	account = cur.fetchone()
+		cur.execute('select * from Accounts where username = % s and password = % s', (username, password))
+		conn.commit()
+		account = cur.fetchone()
 
 	# if one exists and password matches
-	if account and account['Password'] == password:
-		# encode jwt
-		user = {
-			'username': account['Username'],
-	  	'first name': account['FirstName'],
-			'last name': account['LastName']
-		}
-		encoded_jwt = jwt.encode(user, SECRET, algorithm='HS256')
-		# set as cookie
-		resp = make_response({'message': 'login successful!!'}, 200)
-		resp.set_cookie('token', encoded_jwt)
-		return resp
+		if account and account['Password'] == password:
+			session['loggedin'] = True
+			session['id'] = account['id']
+			session['Username'] = account['Username']
+
+			# encode jwt
+			user = {
+				'username': account['Username'],
+			'first name': account['FirstName'],
+				'last name': account['LastName']
+			}
+			encoded_jwt = jwt.encode(user, SECRET, algorithm='HS256')
+			# set as cookie
+			msg = 'Logged in successfully !'
+			resp = make_response(render_template('upload.html', msg = msg), 200)
+			resp.set_cookie('token', encoded_jwt)
+			return resp
+		else:
+			# abort(401, description="incorrect username and/or password")
+			# swap commenting with above code to get postman to work properly after a successful login:
+			msg = 'Incorrect username / password !'
+			resp = make_response(render_template('login.html', msg = msg), 401)
+			resp.set_cookie('token', '', expires=0)
+			return resp
+
 	else:
-		# abort(401, description="incorrect username and/or password")
-		# swap commenting with above code to get postman to work properly after a successful login:
-		resp = make_response({'message': 'incorrect username and/or password'}, 401)
-		resp.set_cookie('token', '', expires=0)
-		return resp
+		if "loggedin" in session:
+			# redirect them to the upload a file page if they are already logged in
+			return redirect(url_for("upload_file"))
+		return render_template('login.html', msg = msg)
 
 
 # protected endpoint
@@ -169,7 +185,7 @@ def upload_file():
    if 'loggedin' in session:
       return render_template("upload.html")
    # If not logged in, direct them to the login page
-   return redirect(url_for('login'))
+   return redirect(url_for("login"))
 
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload():
