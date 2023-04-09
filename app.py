@@ -52,7 +52,6 @@ def internal_error(error):
 def login():
 	msg = ''
 	if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
-
 		session.permanent = True
 		username = request.form['username']
 		password = request.form['password']
@@ -69,6 +68,8 @@ def login():
 			return render_template('upload.html', msg = msg)
 		else:
 			msg = 'Incorrect username / password !'
+	elif request.method == 'POST' and 'username' not in request.form or 'password' not in request.form:
+		abort(400)
 	else:
 		# if "loggedin" in session:
 		# 	# redirect them to the upload a file page if they are already logged in
@@ -130,6 +131,8 @@ def upload():
       f = request.files['file']
       f.save(secure_filename(f.filename)) 
       return 'file uploaded successfully'
+   else:
+	   abort(400)
 		
 if __name__ == '__main__':
    app.run(debug = False)
