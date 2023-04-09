@@ -18,6 +18,11 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 app.secret_key = 'happykey'
 app.permanent_session_lifetime = timedelta(minutes=10)
 
+# file upload configs
+app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
+app.config['UPLOAD_PATH'] = 'uploads'
+
 # To connect MySQL database
 conn = pymysql.connect(
         host='localhost',
@@ -127,12 +132,15 @@ def upload_file():
 	
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload():
-   if request.method == 'POST':
-      f = request.files['file']
-      f.save(secure_filename(f.filename)) 
-      return 'file uploaded successfully'
-   else:
-	   abort(400)
+	if request.method == 'POST':
+		uploaded_file = request.files['file']
+		filename = secure_filename(uploaded_file.filename)
+		if filename != '':
+			file_ext = os.path.splitext(filename)[1]
+			if file_ext not in app.config['UPLOAD_EXTENSIONS']:
+				abort(400)
+			uploaded_file.save(os.path.join(app.config['UPLOAD_PATH'], filename))
+			return redirect(url_for('upload'))
 		
 if __name__ == '__main__':
    app.run(debug = False)
