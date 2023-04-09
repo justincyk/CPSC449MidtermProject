@@ -18,10 +18,15 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 app.secret_key = 'happykey'
 app.permanent_session_lifetime = timedelta(minutes=10)
 
+# file upload configs
+app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
+app.config['UPLOAD_PATH'] = 'uploads'
+
 # To connect MySQL database
 conn = pymysql.connect(
         host='localhost',
-        user= os.getenv("USER"), # set user to the username of your account - prob "root"
+        user= os.getenv("USERNAME"), # set user to the username of your account - prob "root"
         password = os.getenv("PASSWORD"), # Change password to password you set for your database
         db='449_midterm',
 		cursorclass=pymysql.cursors.DictCursor
@@ -68,12 +73,11 @@ def login():
 			return render_template('upload.html', msg = msg)
 		else:
 			msg = 'Incorrect username / password !'
-	elif request.method == 'POST' and 'username' not in request.form or 'password' not in request.form:
-		abort(400)
+			return render_template('login.html', msg = msg)
 	else:
-		# if "loggedin" in session:
-		# 	# redirect them to the upload a file page if they are already logged in
-		# 	return redirect(url_for("upload_file"))
+		if "loggedin" in session:
+			# redirect them to the upload a file page if they are already logged in
+			return redirect(url_for("upload_file"))
 		return render_template('login.html', msg = msg)
 	
 
@@ -90,6 +94,7 @@ def register():
 	if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form and 'firstName' in request.form and 'lastName' in request.form:
 		print('reached')
 		username = request.form['username']
+		print(username)
 		password = request.form['password']
 		retypePassword = request.form['retypePassword']
 		email = request.form['email']
@@ -97,7 +102,7 @@ def register():
 		lastName = request.form['lastName']
 		cur.execute('SELECT * FROM accounts WHERE username = % s', (username, ))
 		account = cur.fetchone()
-		print(account)
+		print("accout: ", account)
 		conn.commit()
 		if account:
 			msg = 'Account already exists!'
@@ -127,12 +132,16 @@ def upload_file():
 	
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload():
-   if request.method == 'POST':
-      f = request.files['file']
-      f.save(secure_filename(f.filename)) 
-      return 'file uploaded successfully'
-   else:
-	   abort(400)
-		
+	if request.method == 'POST':
+		uploaded_file = request.files['file']
+		filename = secure_filename(uploaded_file.filename)
+		if filename != '':
+			file_ext = os.path.splitext(filename)[1]
+			if file_ext not in app.config['UPLOAD_EXTENSIONS']:
+				abort(400)
+			uploaded_file.save(os.path.join(app.config['UPLOAD_PATH'], filename))
+			return redirect(url_for('upload_file'))
+	else:
+		return redirect(url_for('upload_file'))
 if __name__ == '__main__':
    app.run(debug = False)
