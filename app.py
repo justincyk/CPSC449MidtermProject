@@ -1,11 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, abort
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import  FileStorage
+from dotenv import load_dotenv
+import os
 import pymysql
 from datetime import timedelta
 from flask_cors import CORS
 import re
 
+load_dotenv()
 
 app = Flask(__name__, template_folder='templates')
 
@@ -18,8 +21,8 @@ app.permanent_session_lifetime = timedelta(minutes=10)
 # To connect MySQL database
 conn = pymysql.connect(
         host='localhost',
-        user='user', # set user to the username of your account - prob "root"
-        password = "test", # Change password to password you set for your database
+        user= os.getenv("USER"), # set user to the username of your account - prob "root"
+        password = os.getenv("PASSWORD"), # Change password to password you set for your database
         db='449_midterm',
 		cursorclass=pymysql.cursors.DictCursor
         )
