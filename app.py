@@ -8,7 +8,7 @@ from datetime import timedelta
 from flask_cors import CORS
 import re
 
-load_dotenv()
+load_dotenv('.env')
 
 app = Flask(__name__, template_folder='templates')
 
@@ -21,7 +21,7 @@ app.permanent_session_lifetime = timedelta(minutes=10)
 # To connect MySQL database
 conn = pymysql.connect(
         host='localhost',
-        user= os.getenv("USER"), # set user to the username of your account - prob "root"
+        user= os.getenv("USERNAME"), # set user to the username of your account - prob "root"
         password = os.getenv("PASSWORD"), # Change password to password you set for your database
         db='449_midterm',
 		cursorclass=pymysql.cursors.DictCursor
@@ -68,12 +68,10 @@ def login():
 			return render_template('upload.html', msg = msg)
 		else:
 			msg = 'Incorrect username / password !'
-	elif request.method == 'POST' and 'username' not in request.form or 'password' not in request.form:
-		abort(400)
 	else:
-		# if "loggedin" in session:
-		# 	# redirect them to the upload a file page if they are already logged in
-		# 	return redirect(url_for("upload_file"))
+		if "loggedin" in session:
+			# redirect them to the upload a file page if they are already logged in
+			return redirect(url_for("upload_file"))
 		return render_template('login.html', msg = msg)
 	
 
@@ -87,15 +85,14 @@ def logout():
 @app.route('/register', methods =['GET', 'POST'])
 def register():
 	msg = ''
-	if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form and 'firstName' in request.form and 'lastName' in request.form:
+	if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'firstName' in request.form and 'lastName' in request.form:
 		print('reached')
 		username = request.form['username']
 		password = request.form['password']
 		retypePassword = request.form['retypePassword']
-		email = request.form['email']
 		firstName = request.form['firstName']
 		lastName = request.form['lastName']
-		cur.execute('SELECT * FROM accounts WHERE username = % s', (username, ))
+		cur.execute('SELECT * FROM Accounts WHERE username = % s', (username, ))
 		account = cur.fetchone()
 		print(account)
 		conn.commit()
@@ -108,7 +105,7 @@ def register():
 		elif not re.match(retypePassword, password):
 			msg = 'passwords do not match!'
 		else:
-			cur.execute('INSERT INTO accounts VALUES (NULL, % s, % s, % s, % s, % s)', (username, password, email, firstName, lastName))
+			cur.execute('INSERT INTO Accounts (FirstName, LastName, Username, Password) VALUES ( % s, % s, % s, % s)', (firstName, lastName, username, password))
 			conn.commit()
 
 			msg = 'You have successfully registered!'
