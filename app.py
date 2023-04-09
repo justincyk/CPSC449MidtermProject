@@ -28,6 +28,24 @@ conn = pymysql.connect(
         )
 cur = conn.cursor()
 
+# Error handling
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify(error=str(error)), 400
+
+@app.errorhandler(401)
+def unauthorized(error):
+    return jsonify(error=str(error)), 401
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify(error=str(error)), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify(error=str(error)), 500
+
 # Login page
 @app.route('/')
 @app.route('/login', methods =['GET', 'POST'])
