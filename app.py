@@ -91,29 +91,26 @@ def logout():
 @app.route('/register', methods =['GET', 'POST'])
 def register():
 	msg = ''
-	if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form and 'firstName' in request.form and 'lastName' in request.form:
+	if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'firstName' in request.form and 'lastName' in request.form:
 		print('reached')
 		username = request.form['username']
 		print(username)
 		password = request.form['password']
 		retypePassword = request.form['retypePassword']
-		email = request.form['email']
 		firstName = request.form['firstName']
 		lastName = request.form['lastName']
-		cur.execute('SELECT * FROM accounts WHERE username = % s', (username, ))
+		cur.execute('SELECT * FROM Accounts WHERE username = % s;', (username, ))
 		account = cur.fetchone()
 		print("accout: ", account)
 		conn.commit()
 		if account:
 			msg = 'Account already exists!'
-		elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-			msg = 'Invalid email address!'
 		elif not re.match(r'[A-Za-z0-9]+', username):
 			msg = 'name must contain only characters and numbers!'
 		elif not re.match(retypePassword, password):
 			msg = 'passwords do not match!'
 		else:
-			cur.execute('INSERT INTO accounts VALUES (NULL, % s, % s, % s, % s, % s)', (username, password, email, firstName, lastName))
+			cur.execute('INSERT INTO Accounts (FirstName, LastName, Username, Password) VALUES ( % s, % s, % s, % s);', (firstName, lastName, username, password))
 			conn.commit()
 
 			msg = 'You have successfully registered!'
