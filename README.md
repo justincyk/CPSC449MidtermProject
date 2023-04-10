@@ -10,3 +10,9 @@
 2. Activate the environment `source bin/activate`
 3. Install requirements `pip install requirements.txt`
 4. Run the flask application `flask run`
+
+
+### How to Access Website
+
+1. Go on browser and go to `http://127.0.0.1:5000/`
+2. Access admin account: username - admin / password - admin
