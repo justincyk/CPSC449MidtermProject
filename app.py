@@ -27,7 +27,7 @@ app.permanent_session_lifetime = timedelta(minutes=10)
 # file upload configs
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif', '.jpeg']
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
-app.config['UPLOAD_PATH'] = './uploads'
+app.config['UPLOAD_PATH'] = 'uploads'
 # app.config["JWT_ISSUER"] = "Flask_PyJWT"
 # app.config["JWT_AUTHTYPE"] = "HS256"
 # app.config["JWT_SECRET"] = "SuperSecretKey"
