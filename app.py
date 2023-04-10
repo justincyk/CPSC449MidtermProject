@@ -141,9 +141,7 @@ def register():
 		print("accout: ", account)
 		conn.commit()
 		
-		if re.match('admin', username.lower):
-			msg = 'username admin is not allowed!'
-		elif account:
+		if account:
 			msg = 'Account already exists!'
 		elif not re.match(r'[A-Za-z0-9]+', username):
 			msg = 'name must contain only characters and numbers!'
@@ -207,7 +205,7 @@ def upload_file():
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload():
 	# and 'loggedin' in session
-	if request.method == 'POST':
+	if request.method == 'POST' and 'loggedin' in session:
 		uploaded_file = request.files['file']
 		filename = secure_filename(uploaded_file.filename)
 		if filename != '':
