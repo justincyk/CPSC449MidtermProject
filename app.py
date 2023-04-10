@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import  FileStorage
 from dotenv import load_dotenv
-import os	
+import os
 import pymysql
 from datetime import timedelta
 from flask_cors import CORS
@@ -61,7 +61,7 @@ def internal_error(error):
     return jsonify(error=str(error)), 500
 
 # login_required decorator definition
-def login_required(func):
+def admin_only(func):
 	@wraps(func)
 	def decorated_func(*args, **kwargs):
 		encoded_jwt = request.cookies.get('token')
@@ -71,6 +71,16 @@ def login_required(func):
 		abort(401, description="Admin access only! Please login as admin to access this page.")
 	return decorated_func
 
+# admin_only decorator definition
+def login_required(func):
+	@wraps(func)
+	def decorated_func(*args, **kwargs):
+		encoded_jwt = request.cookies.get('token')
+		if encoded_jwt:
+			user = jwt.decode(encoded_jwt, key=SECRET, algorithms=["HS256"])
+			if user['Username'] == session['Username']: return func(*args, **kwargs)
+		abort(401, description="Admin access only! Please login as admin to access this page.")
+	return decorated_func
 
 # Login page
 @app.route('/')
@@ -109,14 +119,14 @@ def login():
 			msg = 'Incorrect username / password !'
 			resp = make_response(redirect(url_for('login')), 401)
 			resp.set_cookie('token', '', expires=0)
-			return resp	
+			return resp
 			# return render_template('login.html', msg = msg)
 	else:
 		if "loggedin" in session:
 			# redirect them to the upload a file page if they are already logged in
 			return redirect(url_for("upload_file"))
 		return render_template('login.html', msg = msg)
-	
+
 
 @app.route('/logout')
 def logout():
@@ -140,7 +150,7 @@ def register():
 		account = cur.fetchone()
 		print("accout: ", account)
 		conn.commit()
-		
+
 		if account:
 			msg = 'Account already exists!'
 		elif not re.match(r'[A-Za-z0-9]+', username):
@@ -158,7 +168,7 @@ def register():
 
 # protected endpoint for admin only
 @app.route('/admin')
-@login_required
+@admin_only
 def admin():
 	# protected endpoint only authenticated users (admin) can access
 	return {'message': 'Welcome to the site Admin! Only an admin can access this page'}
@@ -195,14 +205,16 @@ def sitemap():
 
 
 @app.route('/upload')
+@login_required
 def upload_file():
    # Make sure they are logged in before accessing the upload page
    if 'loggedin' in session:
       return render_template("upload.html")
    # If not logged in, direct them to the login page
    return redirect(url_for('login'))
-	
+
 @app.route('/uploader', methods = ['GET', 'POST'])
+@login_required
 def upload():
 	# and 'loggedin' in session
 	if request.method == 'POST' and 'loggedin' in session:
