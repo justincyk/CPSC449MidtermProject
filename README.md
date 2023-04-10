@@ -15,4 +15,4 @@
 ### How to Access Website
 
 1. Go on browser and go to `http://127.0.0.1:5000/`
-2. Access admin account: username - admin / password - admin
+2. Access the admin account: `Username - admin / Password - admin`
