@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import  FileStorage
 from dotenv import load_dotenv
-import os
+import os	
 import pymysql
 from datetime import timedelta
 from flask_cors import CORS
@@ -203,7 +203,6 @@ def upload_file():
 	
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload():
-	print("upload reached")
 	if request.method == 'POST':
 		uploaded_file = request.files['file']
 		filename = secure_filename(uploaded_file.filename)
