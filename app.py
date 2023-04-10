@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, abort
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, abort, make_response
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import  FileStorage
 from dotenv import load_dotenv
@@ -6,22 +6,31 @@ import os
 import pymysql
 from datetime import timedelta
 from flask_cors import CORS
+from functools import wraps
 import re
+# from jwt import PyJWT
+import jwt
+# from flask_pyjwt import AuthManager
 
 load_dotenv()
 
 app = Flask(__name__, template_folder='templates')
+# auth_manager = AuthManager(app)
 
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
+SECRET = "sufferin' succotash!"
 
 app.secret_key = 'happykey'
 app.permanent_session_lifetime = timedelta(minutes=10)
 
 # file upload configs
-app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
+app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif', '.jpeg']
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
-app.config['UPLOAD_PATH'] = 'uploads'
+app.config['UPLOAD_PATH'] = './uploads'
+# app.config["JWT_ISSUER"] = "Flask_PyJWT"
+# app.config["JWT_AUTHTYPE"] = "HS256"
+# app.config["JWT_SECRET"] = "SuperSecretKey"
 
 # To connect MySQL database
 conn = pymysql.connect(
@@ -51,6 +60,18 @@ def not_found(error):
 def internal_error(error):
     return jsonify(error=str(error)), 500
 
+# login_required decorator definition
+def login_required(func):
+	@wraps(func)
+	def decorated_func(*args, **kwargs):
+		encoded_jwt = request.cookies.get('token')
+		if encoded_jwt:
+			user = jwt.decode(encoded_jwt, key=SECRET, algorithms=["HS256"])
+			if user['Username'] == 'admin': return func(*args, **kwargs)
+		abort(401, description="Admin access only! Please login as admin to access this page.")
+	return decorated_func
+
+
 # Login page
 @app.route('/')
 @app.route('/login', methods =['GET', 'POST'])
@@ -63,17 +84,33 @@ def login():
 		cur.execute('SELECT * FROM Accounts WHERE Username = % s AND Password = % s', (username, password, ))
 		conn.commit()
 		account = cur.fetchone()
+
 		if account:
 
 			session['loggedin'] = True
 			session['id'] = account['id']
 			session['Username'] = account['Username']
 			msg = 'Logged in successfully !'
+
+			user = {
+				'Username': account['Username'],
+				'FirstName': account['FirstName'],
+				'LastName': account['LastName']
+			}
+			encoded_jwt = jwt.encode(payload=user, key=SECRET, algorithm='HS256')
+			# set as cookie
+			resp = make_response(redirect(url_for('upload_file')), 200)
+			resp.set_cookie('token', encoded_jwt)
+			return resp
+
 			# direct them to the upload a file page if they successfully log in
-			return render_template('upload.html', msg = msg)
+			# return render_template('upload.html', msg = msg)
 		else:
 			msg = 'Incorrect username / password !'
-			return render_template('login.html', msg = msg)
+			resp = make_response(redirect(url_for('login')), 401)
+			resp.set_cookie('token', '', expires=0)
+			return resp	
+			# return render_template('login.html', msg = msg)
 	else:
 		if "loggedin" in session:
 			# redirect them to the upload a file page if they are already logged in
@@ -118,6 +155,43 @@ def register():
 		msg = 'Please fill out the form!'
 	return render_template('register.html', msg = msg)
 
+# protected endpoint for admin only
+@app.route('/admin')
+@login_required
+def admin():
+	# protected endpoint only authenticated users (admin) can access
+	return {'message': 'Welcome to the site Admin! Only an admin can access this page'}
+
+# public enpoints
+@app.route('/public')
+def public():
+	return {
+		'message': 'You got in! Pfft...so what!! So did everyone else...',
+		'view': 'public information'
+	}
+
+@app.route('/unprotected')
+def unprotected():
+	return {
+		'message': 'You got in! Pfft...so what!! So did everyone else...',
+		'view': 'public information'
+	}
+
+@app.route('/freebies')
+def freebies():
+	return {
+		'message': "You got in! Pfft...so what!! So did everyone else...",
+		'view': 'public information'
+	}
+
+# endpoint to return a list of items that can be viewed publicly
+@app.route('/sitemap')
+def sitemap():
+	return {
+		'public endpoints': ['/public', '/unprotected', '/freebies'],
+		'view': 'public information'
+	}
+
 
 @app.route('/upload')
 def upload_file():
@@ -129,6 +203,7 @@ def upload_file():
 	
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload():
+	print("upload reached")
 	if request.method == 'POST':
 		uploaded_file = request.files['file']
 		filename = secure_filename(uploaded_file.filename)
@@ -140,5 +215,6 @@ def upload():
 			return redirect(url_for('upload_file'))
 	else:
 		return redirect(url_for('upload_file'))
+
 if __name__ == '__main__':
    app.run(debug = False)

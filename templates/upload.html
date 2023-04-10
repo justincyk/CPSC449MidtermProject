@@ -7,18 +7,27 @@
     <title>Upload File</title>
   </head>
   <body>
-    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px 20px; margin: 20px 20px;">
-      <div style="display: flex; flex-direction: row; justify-content: center;">
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 20px 20px;
+        margin: 20px 20px;
+      "
+    >
+      <div style="display: flex; flex-direction: row; justify-content: center">
         <form
-        action="http://localhost:5000/uploader"
-        method="POST"
-        enctype="multipart/form-data"
-            >
-        <input type="file" name="file" />
-        <input type="submit" />
+          action="http://localhost:5000/uploader"
+          method="post"
+          enctype="multipart/form-data"
+        >
+          <input type="file" name="file" />
+          <input type="submit" value="Upload Now" />
+        </form>
       </div>
-      <a href="{{url_for('logout')}}" style="padding-top: 40px;">Log out</a>
+      <a href="{{url_for('logout')}}" style="padding-top: 40px">Log out</a>
     </div>
-    
   </body>
 </html>
